@@ -226,7 +226,7 @@ class RemoteIpDetector {
                 //log.warn("could not resolve remote ip for "+originalRemoteAddr);
                 //return originalRemoteAddr;
                 
-                log.error("no remote ip");
+                log.info("no remote ip found in header");
                 throw new ElasticsearchSecurityException("no remote ip", RestStatus.BAD_REQUEST);
             }
             

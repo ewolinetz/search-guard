@@ -57,11 +57,17 @@ public class XFFResolver implements ConfigChangeListener{
         }
         
         if(isInitialized() && enabled && request.getRemoteAddress() instanceof InetSocketAddress && request instanceof NettyHttpRequest) {
-            InetSocketAddress isa =new InetSocketAddress(detector.detect((NettyHttpRequest) request), ((InetSocketAddress)request.getRemoteAddress()).getPort());
-            TransportAddress retVal = new InetSocketTransportAddress(isa);
-            request.putInContext(ConfigConstants.SG_XFF_DONE, Boolean.TRUE);
-            log.debug("xff resolved {} to {}", request.getRemoteAddress(), isa);
-            return retVal;
+            try {
+                InetSocketAddress isa =new InetSocketAddress(detector.detect((NettyHttpRequest) request), ((InetSocketAddress)request.getRemoteAddress()).getPort());
+                TransportAddress retVal = new InetSocketTransportAddress(isa);
+                request.putInContext(ConfigConstants.SG_XFF_DONE, Boolean.TRUE);
+                log.debug("xff resolved {} to {}", request.getRemoteAddress(), isa);
+                return retVal;
+            }
+            catch ( ElasticsearchSecurityException e ) {
+                log.info("no xff done: ", e.getCause());
+                return new InetSocketTransportAddress((InetSocketAddress)request.getRemoteAddress());
+            }
         } else if(request.getRemoteAddress() instanceof InetSocketAddress){
             log.debug("no xff done {},{},{},{}",isInitialized(), enabled, request.getClass());
             return new InetSocketTransportAddress((InetSocketAddress)request.getRemoteAddress());
