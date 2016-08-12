@@ -50,22 +50,25 @@ public class ConfigurationLoader {
     protected final ESLogger log = Loggers.getLogger(this.getClass());
     private final Provider<Client> client;
 
+    private final String searchguardIndex;
+    
     @Inject
-    public ConfigurationLoader(final Provider<Client> client) {
+    public ConfigurationLoader(final Provider<Client> client, final Settings settings) {
         super();
         this.client = client;
+        this.searchguardIndex = settings.get(ConfigConstants.SG_CONFIG_INDEX, ConfigConstants.SG_DEFAULT_CONFIG_INDEX);
     }
 
     public Map<String, Settings> load(final String[] events) {
 
         try {
-            IndicesExistsRequest ier = new IndicesExistsRequest("searchguard");
+            IndicesExistsRequest ier = new IndicesExistsRequest(searchguardIndex);
             ier.putHeader(ConfigConstants.SG_CONF_REQUEST_HEADER, "true");
             IndicesExistsResponse ieres = client.get().admin().indices().exists(ier).actionGet(10000);
             if(ieres.isExists()) {
-                log.debug("searchguard index exists");
+                log.debug("searchguard '{}' index exists", searchguardIndex);
             } else {
-                log.debug("searchguard index does not exist");
+                log.debug("searchguard '{}' index does not exist", searchguardIndex);
             }
         } catch (Exception e2) {
             log.warn("Unexpected exception while checking if searchguard index exists: {}", e2.toString());
@@ -83,7 +86,7 @@ public class ConfigurationLoader {
 
         for (int i = 0; i < events.length; i++) {
             final String event = events[i];
-            mget.add("searchguard", event, "0");
+            mget.add(searchguardIndex, event, "0");
         }
 
         mget.putHeader(ConfigConstants.SG_CONF_REQUEST_HEADER, "true"); //header needed here
